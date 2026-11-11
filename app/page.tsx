@@ -5,12 +5,20 @@ import { GpxRouteCanvas } from "./components/GpxRouteCanvas";
 import type { DashboardEvent } from "../lib/types";
 
 const filters = ["Tous", "En course", "Arrivés"];
+const publicNavigation = [
+  { href: "#classement", label: "Classement" },
+  { href: "#parcours", label: "Parcours" },
+  { href: "/track", label: "Partager GPS" },
+  { href: "/display", label: "Écran camp" },
+  { href: "/admin", label: "Pilotage" },
+];
 
 export default function Home() {
   const [event, setEvent] = useState<DashboardEvent | null>(null);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("Tous");
   const [followed, setFollowed] = useState<number[]>([]);
+  const [shareLabel, setShareLabel] = useState("Partager");
   const [now, setNow] = useState(() => Date.now());
 
   const loadEvent = useCallback(async () => {
@@ -62,23 +70,48 @@ export default function Home() {
     setFollowed((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  async function sharePage() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(window.location.href);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = window.location.href;
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
+      }
+      setShareLabel("Lien copié !");
+    } catch {
+      setShareLabel("Copie impossible");
+    }
+    window.setTimeout(() => setShareLabel("Partager"), 2_000);
+  }
+
   return (
     <main>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Last Loop, accueil">
           <span className="brand-mark" aria-hidden="true">⌁</span><span>LAST LOOP</span>
         </a>
-        <div className="event-switcher" aria-label="Événement en cours">
+        <a className="event-switcher" href="#course-overview" aria-label={`Voir le résumé de ${event.name}`}>
           <span className="event-date">{dateLabel}</span><span className="event-name">{event.name}</span><span className="chevron">⌄</span>
-        </div>
+        </a>
         <nav className="nav-actions" aria-label="Navigation principale">
-          <a href="#classement">Classement</a><a href="#parcours">Parcours</a><a href="/track">Partager GPS</a><a href="/display">Écran camp</a><a href="/admin">Pilotage</a>
-          <button className="share-button" type="button" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Partager <span>↗</span></button>
+          {publicNavigation.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}
+          <details className="mobile-nav">
+            <summary>Menu</summary>
+            <div>{publicNavigation.map((item) => <a key={item.href} href={item.href}>{item.label}</a>)}</div>
+          </details>
+          <button className="share-button" type="button" onClick={() => void sharePage()} aria-live="polite">{shareLabel} <span>↗</span></button>
         </nav>
       </header>
 
       <div className="page-shell" id="top">
-        <section className="event-heading">
+        <section className="event-heading" id="course-overview">
           <div>
             <div className="eyebrow"><span className="live-dot" /> LIVE · {event.status.toUpperCase()}</div>
             <h1>{event.name}</h1>
@@ -101,7 +134,7 @@ export default function Home() {
           <article className="stat-card lime-card">
             <div className="card-kicker">BOUCLES EFFECTUÉES</div>
             <strong>{event.stats.completedLaps}<small> / {event.totalLoops ?? "∞"}</small></strong>
-            <div className="stat-bottom"><span>Boucle actuelle : {event.stats.currentLap}</span><span>↗</span></div>
+            <div className="stat-bottom"><span>Boucle actuelle : {event.stats.currentLap}</span><a href="#classement">Voir le classement <span aria-hidden="true">↗</span></a></div>
           </article>
 
           <article className="stat-card dark-card">
@@ -183,7 +216,7 @@ export default function Home() {
         </section>
 
         <footer>
-          <div className="brand footer-brand"><span className="brand-mark">⌁</span><span>LAST LOOP</span></div>
+          <a className="brand footer-brand" href="#top" aria-label="Revenir en haut de la page"><span className="brand-mark">⌁</span><span>LAST LOOP</span></a>
           <p>Le suivi live des courses qui ne s’arrêtent jamais.</p>
           <span>Données SQLite · Mise à jour {formatTime(now)}</span>
         </footer>

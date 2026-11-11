@@ -20,14 +20,21 @@ a { color: inherit; text-decoration: none; }
 .topbar { height: 72px; padding: 0 3.2vw; background: var(--ink); color: white; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; position: sticky; top: 0; z-index: 20; }
 .brand { display: inline-flex; align-items: center; gap: 11px; width: fit-content; font-size: 14px; font-weight: 900; letter-spacing: -.03em; }
 .brand-mark { width: 31px; height: 31px; border: 1px solid #6c7068; display: grid; place-items: center; border-radius: 50%; color: var(--lime); font-size: 22px; line-height: 1; }
-.event-switcher { height: 40px; padding: 0 15px; display: flex; align-items: center; gap: 13px; border: 1px solid #3b3e38; border-radius: 4px; font-size: 11px; }
+.event-switcher { height: 40px; padding: 0 15px; display: flex; align-items: center; gap: 13px; border: 1px solid #3b3e38; border-radius: 4px; font-size: 11px; transition: border-color .2s ease, background .2s ease; }
+.event-switcher:hover, .event-switcher:focus-visible { border-color: var(--lime); background: #20231f; }
 .event-date { color: #a4a79e; font-weight: 700; letter-spacing: .08em; }
 .event-name { font-weight: 700; }
 .chevron { color: #94978f; margin-left: 5px; }
-.nav-actions { display: flex; justify-content: flex-end; align-items: center; gap: 28px; font-size: 12px; font-weight: 700; }
+.nav-actions { display: flex; justify-content: flex-end; align-items: center; gap: 28px; position: relative; font-size: 12px; font-weight: 700; }
 .nav-actions a { color: #bfc1ba; transition: color .2s ease; }
 .nav-actions a:hover { color: white; }
 .share-button { border: 0; background: var(--lime); padding: 11px 15px; border-radius: 3px; font-weight: 800; cursor: pointer; }
+.mobile-nav { display: none; position: relative; }
+.mobile-nav summary, .session-mobile-menu summary { list-style: none; cursor: pointer; text-transform: uppercase; }
+.mobile-nav summary::-webkit-details-marker, .session-mobile-menu summary::-webkit-details-marker { display: none; }
+.mobile-nav > div { position: absolute; top: 42px; right: 0; width: 190px; padding: 8px; display: grid; background: var(--ink); border: 1px solid #4c4f48; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+.mobile-nav > div a { display: block; padding: 11px; color: white; border-bottom: 1px solid #30332e; }
+.mobile-nav > div a:last-child { border-bottom: 0; }
 
 .page-shell { width: min(1440px, 94vw); margin: 0 auto; }
 .event-heading { min-height: 340px; padding: 80px 0 58px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -46,6 +53,7 @@ a { color: inherit; text-decoration: none; }
 .countdown-card { background: var(--white); }
 .countdown { font-size: clamp(70px, 9.5vw, 144px); line-height: .96; letter-spacing: -.075em; font-weight: 900; font-variant-numeric: tabular-nums; }
 .countdown-footer, .stat-bottom { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; }
+.stat-bottom a { text-decoration: underline; text-underline-offset: 3px; }
 .progress-track { height: 4px; background: #d9d7d0; margin-top: 20px; overflow: hidden; }
 .progress-track span { height: 100%; display: block; background: var(--ink); transition: width .5s linear; }
 .stat-card { display: flex; flex-direction: column; justify-content: space-between; border-left: 1px solid var(--ink); }
@@ -197,11 +205,13 @@ h2 { margin: 10px 0 0; font-size: clamp(32px, 4vw, 54px); letter-spacing: -.055e
 .archive-row em { width: fit-content; padding: 5px 7px; background: var(--lime); font-style: normal; font-size: 8px; font-weight: 900; }
 .archive-row button { height: 30px; background: transparent; }
 
-.session-menu { display: flex; align-items: center; gap: 14px; }
+.session-menu { display: flex; align-items: center; gap: 14px; position: relative; }
+.session-desktop-links { display: flex; align-items: center; gap: 14px; }
 .session-menu a { color: #bbbeb6 !important; transition: color .2s ease; }
 .session-menu a:hover { color: white !important; }
 .session-menu b { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
 .session-menu button { border: 1px solid #4c4f48; background: transparent; color: white; padding: 8px 10px; cursor: pointer; font-size: 8px; font-weight: 900; }
+.session-mobile-menu { display: none; }
 .session-loading { color: #85887f; font-size: 8px; letter-spacing: .1em; }
 .role-pill { display: inline-flex; width: fit-content; padding: 5px 7px; font-size: 7px; font-weight: 900; letter-spacing: .08em; font-style: normal; }
 .role-runner { background: #dce8ff; color: #28518d; }
@@ -581,6 +591,8 @@ footer > span { text-align: right; }
 
 @media (max-width: 1050px) {
   .nav-actions a { display: none; }
+  .mobile-nav { display: block; }
+  .mobile-nav > div a { display: block; }
   .live-grid { grid-template-columns: 1.6fr 1fr; }
   .dark-card { min-height: 160px !important; }
   .dark-card strong { font-size: 84px; }
@@ -646,8 +658,13 @@ footer > span { text-align: right; }
   .admin-runner .danger-action { grid-column: 2 / 4; }
   .archive-row { grid-template-columns: 95px 1fr 70px; }
   .archive-row > span:nth-child(3) { display: none; }
-  .session-menu a, .session-menu b, .session-menu .role-pill { display: none; }
-  .session-menu button { padding: 7px 8px; }
+  .session-desktop-links, .session-identity, .session-logout { display: none; }
+  .session-mobile-menu { display: block; }
+  .session-mobile-menu summary { padding: 8px 10px; border: 1px solid #4c4f48; color: white; font-size: 8px; font-weight: 900; }
+  .session-mobile-menu > div { position: absolute; z-index: 30; top: 41px; right: 0; width: 210px; padding: 10px; display: grid; gap: 2px; background: var(--ink); border: 1px solid #4c4f48; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+  .session-mobile-menu strong { padding: 9px; color: var(--lime); font-size: 9px; }
+  .session-menu .session-mobile-menu a { display: block; padding: 10px 9px; color: white !important; border-bottom: 1px solid #30332e; }
+  .session-mobile-menu button { margin-top: 6px; padding: 10px; }
   .auth-page { grid-template-columns: 1fr; }
   .auth-brand-panel { min-height: 42vh; padding: 34px 5vw; }
   .auth-brand-panel h1 { font-size: 15vw; margin: 40px 0; }

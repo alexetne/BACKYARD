@@ -25,16 +25,30 @@ export function SessionMenu() {
 
   if (!user) return <span className="session-loading">SESSION…</span>;
 
+  const links = [
+    ...(user.role === "director" ? [{ href: "/ds", label: "Dashboard DS" }, { href: "/director", label: "Configuration" }] : []),
+    ...(user.role === "director" || user.role === "admin" ? [{ href: "/admin", label: "Chronométrage" }] : []),
+    ...(user.role === "runner" ? [{ href: "/runner", label: "Mon espace" }] : []),
+  ];
+
   return (
     <div className="session-menu">
-      {user.role === "director" && <Link href="/ds">Dashboard DS</Link>}
-      {user.role === "director" && <Link href="/director">Configuration</Link>}
-      {(user.role === "director" || user.role === "admin") && <Link href="/admin">Chronométrage</Link>}
-      {user.role === "runner" && <Link href="/runner">Mon espace</Link>}
-      <Link href="/display" target="_blank" rel="noreferrer">Écran camp</Link>
-      <span className={`role-pill role-${user.role}`}>{roleLabel(user.role)}</span>
-      <b>{user.name}</b>
-      <button type="button" onClick={() => void logout()}>Déconnexion</button>
+      <nav className="session-desktop-links" aria-label="Navigation de l’espace privé">
+        {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
+        <Link href="/display" target="_blank" rel="noreferrer">Écran camp</Link>
+      </nav>
+      <span className={`role-pill role-${user.role} session-identity`}>{roleLabel(user.role)}</span>
+      <b className="session-identity">{user.name}</b>
+      <button className="session-logout" type="button" onClick={() => void logout()}>Déconnexion</button>
+      <details className="session-mobile-menu">
+        <summary>Menu</summary>
+        <div>
+          <strong>{user.name}</strong>
+          {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
+          <Link href="/display" target="_blank" rel="noreferrer">Écran camp ↗</Link>
+          <button type="button" onClick={() => void logout()}>Déconnexion</button>
+        </div>
+      </details>
     </div>
   );
 }
