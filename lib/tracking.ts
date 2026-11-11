@@ -116,7 +116,8 @@ export function connectTrackingDevice(rawCode: string) {
 }
 
 export function getTrackingDevice(request: Request): TrackingDevice | null {
-  const token = readCookie(request.headers.get("cookie"), TRACKING_COOKIE);
+  const token = readBearerToken(request.headers.get("authorization"))
+    ?? readCookie(request.headers.get("cookie"), TRACKING_COOKIE);
   if (!token) return null;
   const row = getDb().prepare(`
     SELECT td.id, td.event_id, td.participant_id, td.expires_at,
@@ -172,6 +173,13 @@ function verifyCode(code: string, salt: string, expectedHash: string) {
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+function readBearerToken(header: string | null) {
+  if (!header) return null;
+  const match = /^Bearer\s+([^\s]+)$/i.exec(header.trim());
+  const token = match?.[1] ?? "";
+  return token.length >= 32 && token.length <= 128 ? token : null;
 }
 
 function readCookie(header: string | null, name: string) {

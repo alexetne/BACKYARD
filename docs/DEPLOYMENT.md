@@ -212,7 +212,35 @@ un contexte sécurisé.
 
 La route `/setup` refuse toute nouvelle création dès qu’un utilisateur existe.
 
-## 10. Sauvegarde SQLite
+## 10. Application mobile GPS
+
+L’application native dans `apps/tracker` ne contient ni serveur ni base métier.
+Elle doit joindre la même URL HTTPS publique que le site :
+
+```bash
+cd apps/tracker
+cp .env.example .env
+# Renseigner EXPO_PUBLIC_API_URL=https://backyard.example.fr
+npm ci
+npm run typecheck
+```
+
+Pour une distribution de production, construis sans
+`LAST_LOOP_ALLOW_HTTP=1`. Android exige une clé de signature et un APK/AAB ;
+iOS exige macOS, Xcode et un certificat Apple. Les projets natifs peuvent être
+générés avec `npx expo prebuild`, puis archivés localement dans Android Studio
+ou Xcode : aucun hébergement Expo n’est requis.
+
+Avant diffusion :
+
+- vérifie l’URL HTTPS embarquée et `/api/health` depuis un réseau mobile ;
+- teste les permissions « Toujours », l’écran verrouillé et la notification
+  Android sur de vrais appareils ;
+- teste dix minutes hors réseau puis la resynchronisation ;
+- documente la collecte, l’affichage public et la durée de conservation GPS ;
+- prépare une procédure de mise à jour de l’application installée.
+
+## 11. Sauvegarde SQLite
 
 SQLite fonctionne en mode WAL. La méthode à chaud recommandée utilise la
 commande `.backup` :
@@ -242,7 +270,7 @@ moins une copie hors du serveur.
 4. vérifie le propriétaire et les droits ;
 5. redémarre et contrôle `/api/health`, `/` et `/director`.
 
-## 11. Mise à jour
+## 12. Mise à jour
 
 Procédure prudente :
 
@@ -258,7 +286,7 @@ Les `CREATE TABLE IF NOT EXISTS` s’exécutent au démarrage. Pour une future
 modification destructive du schéma, prépare une migration et une sauvegarde
 avant la mise à jour.
 
-## 12. Supervision
+## 13. Supervision
 
 Sonde recommandée toutes les 30 à 60 secondes :
 
@@ -272,7 +300,7 @@ GET https://backyard.example.fr/api/health
 La réponse ne contient ni secret ni chemin local. Surveille également l’espace
 disque, la mémoire, les erreurs systemd, l’expiration TLS et les échecs SMTP.
 
-## 13. Pare-feu et sécurité
+## 14. Pare-feu et sécurité
 
 - expose uniquement 80/443 ; garde le port Node inaccessible publiquement ;
 - protège `/etc/last-loop.env` et la base avec des droits minimaux ;
@@ -284,7 +312,7 @@ disque, la mémoire, les erreurs systemd, l’expiration TLS et les échecs SMTP
 - choisis une durée de conservation adaptée et exporte avant suppression si
   l’historique doit être archivé.
 
-## 14. Cartographie
+## 15. Cartographie
 
 Le serveur communautaire `tile.openstreetmap.org` convient au développement et
 aux faibles volumes, pas à un événement très consulté sans évaluation de sa

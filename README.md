@@ -13,8 +13,8 @@ téléphone.
   mot de passe par e-mail ;
 - profils coureurs publics et historique des tours ;
 - vues `/display` pour le camp de base et `/ds` pour la direction de course ;
-- suivi GPS avec codes individuels, reprise après coupure réseau et détection
-  d’écart au parcours ;
+- suivi GPS au choix par la page web ou l’application mobile native, avec codes
+  individuels, reprise après coupure réseau et détection d’écart au parcours ;
 - demandes d’assistance avec acquittement par la direction ;
 - exports CSV des résultats, tours, points GPS et alertes ;
 - endpoint de supervision `/api/health`.
@@ -32,6 +32,21 @@ npm run dev
 Ouvre [http://localhost:3000/setup](http://localhost:3000/setup) pour créer le
 premier compte directeur. La base SQLite de développement est créée
 automatiquement dans `data/backyard.sqlite`.
+
+### Application GPS mobile
+
+L’application Expo/React Native vit dans `apps/tracker`. Après l’installation
+du projet web :
+
+```bash
+cd apps/tracker
+npm install
+npm run ios       # ou npm run android
+```
+
+Le suivi web `/track` reste disponible sans installation. L’application mobile
+est recommandée pour le suivi écran verrouillé et les longues courses. Consulte
+son [guide dédié](apps/tracker/README.md) pour le développement et les builds.
 
 ## Documentation
 
@@ -58,13 +73,15 @@ persistant pour `DATABASE_PATH`, configure le SMTP, puis place obligatoirement
 l’application derrière HTTPS pour les cookies sécurisés et la géolocalisation.
 Le projet ne contient aucun déploiement vers un hébergeur tiers.
 
-## Limite du suivi web
+## Suivi web ou application mobile
 
 Les navigateurs mobiles peuvent suspendre la géolocalisation quand la page est
 masquée ou l’écran verrouillé. `/track` tente de maintenir l’écran allumé,
 conserve temporairement les points hors ligne et reprend la synchronisation au
-retour. Une application native resterait nécessaire pour garantir un suivi
-permanent en arrière-plan sur tous les téléphones.
+retour. `apps/tracker` fournit un suivi natif plus fiable en arrière-plan avec
+la même base, les mêmes codes coureurs et les mêmes dashboards. Aucun téléphone
+ne doit cependant être considéré comme une balise de sécurité garantie : le
+système peut être arrêté par l’utilisateur ou par le système d’exploitation.
 
 ## Licence et données
 

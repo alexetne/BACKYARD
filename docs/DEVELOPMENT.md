@@ -8,7 +8,8 @@
 - SQLite via `node:sqlite` ;
 - Leaflet et OpenStreetMap pour le parcours ;
 - Nodemailer pour les invitations ;
-- CSS global sans bibliothèque de composants.
+- CSS global sans bibliothèque de composants ;
+- Expo 58 et React Native pour l’application GPS `apps/tracker`.
 
 Node.js 22.13 minimum est requis pour `DatabaseSync` de `node:sqlite`.
 
@@ -40,6 +41,10 @@ DATABASE_PATH=/tmp/last-loop-dev.sqlite npm run dev
 | `npm run build` | build de production dans `dist/standalone` |
 | `npm test` | lint puis build complet |
 | `npm start` | démarre le build autonome |
+| `npm run mobile:start` | démarre Metro pour le development build mobile |
+| `npm run mobile:ios` | compile et lance l’application iOS locale |
+| `npm run mobile:android` | compile et lance l’application Android locale |
+| `npm run mobile:check` | contrôle TypeScript de l’application mobile |
 
 Avant une livraison, exécute au minimum `npm test`.
 
@@ -67,6 +72,7 @@ lib/
   mail.ts               SMTP
   tracking.ts           codes et appareils GPS
 docs/                   documentation du projet
+apps/tracker/           application GPS native iOS et Android
 ```
 
 ## 5. Base de données
@@ -130,9 +136,10 @@ autorisation.
 
 1. le directeur génère un code opaque ;
 2. seul son hash est conservé ;
-3. `/track` échange le code contre un cookie d’appareil ;
-4. le navigateur collecte une position haute précision environ toutes les huit
-   secondes ;
+3. `/track` échange le code contre un cookie d’appareil, tandis que
+   `apps/tracker` demande un jeton Bearer conservé dans le Keychain/Keystore ;
+4. le navigateur ou le service de localisation natif collecte des positions
+   haute précision ;
 5. jusqu’à 30 points sont envoyés par requête ;
 6. les doublons appareil/horodatage sont ignorés ;
 7. le serveur purge les anciens points à chaque insertion ;
@@ -145,6 +152,36 @@ réception.
 
 Les navigateurs ne garantissent pas le GPS lorsque la page est masquée. Ne
 présente jamais la solution web comme une balise de sécurité autonome.
+
+### Développer l’application mobile
+
+```bash
+cd apps/tracker
+npm install
+cp .env.example .env
+npm run typecheck
+npm run ios       # ou npm run android
+```
+
+La localisation en arrière-plan exige un development build : Expo Go ne suffit
+pas. Sur un téléphone physique, `EXPO_PUBLIC_API_URL` doit contenir l’IP LAN de
+la machine qui exécute le backend, et non `localhost`. Le serveur web continue
+de tourner séparément à la racine avec :
+
+```bash
+npm run dev -- --hostname 0.0.0.0
+```
+
+Les scripts iOS et Android activent temporairement HTTP pour les adresses
+privées avec `LAST_LOOP_ALLOW_HTTP=1`. Un build sans cette variable refuse ces
+exceptions. Avant une distribution, utilise donc une URL HTTPS et construis
+sans cette variable. Les fichiers principaux sont :
+
+- `App.tsx` : association, permissions et interface coureur ;
+- `src/trackingTask.ts` : tâche GPS exécutée en arrière-plan ;
+- `src/storage.ts` : jeton sécurisé, état et file hors ligne ;
+- `src/api.ts` : appels Bearer et synchronisation par lots ;
+- `app.config.ts` : permissions natives iOS et Android.
 
 ## 8. Alertes d’assistance
 
@@ -213,6 +250,8 @@ d’altitude, coordonnées invalides, très grande trace et boucle fermée.
 - position sur le GPX et position hors parcours ;
 - disparition du live après cinq minutes ;
 - assistance, urgence, acquittement et clôture.
+- application native : arrière-plan, écran verrouillé, redémarrage, révocation
+  du jeton et synchronisation après dix minutes hors ligne ;
 
 ### Production
 

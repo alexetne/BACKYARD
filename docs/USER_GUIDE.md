@@ -7,7 +7,8 @@
 | `/` | oui | live, classement, carte et positions GPS fraîches |
 | `/runners/[profil]` | oui | fiche publique d’un coureur |
 | `/display` | oui | vidéoprojecteur du camp de base |
-| `/track` | avec code GPS | téléphone du coureur utilisé comme balise |
+| `/track` | avec code GPS | balise web sans installation |
+| application Last Loop Tracker | avec le même code GPS | balise native écran verrouillé |
 | `/runner` | compte coureur | profil et statistiques personnelles |
 | `/admin` | admin ou directeur | participants et chronométrage |
 | `/ds` | directeur | poste de commandement en direct |
@@ -136,14 +137,37 @@ Dans le bloc GPS de `/ds` :
 1. clique sur « Générer » en face du coureur ;
 2. note ou copie immédiatement le code complet ;
 3. remets-le uniquement au coureur concerné ;
-4. fais ouvrir `/track` sur son téléphone ;
+4. propose l’application Last Loop Tracker, ou `/track` sans installation ;
 5. vérifie que l’appareil passe à « Associé », puis « En direct ».
 
 Le code complet n’est affiché qu’une fois. Seuls ses deux derniers caractères
 restent visibles ensuite. « Régénérer » déconnecte immédiatement l’ancien
 téléphone.
 
-## 10. Utiliser `/track` sur le téléphone
+## 10. Utiliser le suivi GPS sur le téléphone
+
+Le même code fonctionne avec les deux méthodes :
+
+- **application Last Loop Tracker** : recommandée, GPS en arrière-plan, écran
+  verrouillé et file hors ligne étendue ;
+- **page `/track`** : aucun téléchargement, mais la page doit rester visible
+  pour une fiabilité maximale.
+
+### Avec l’application mobile
+
+1. installe l’application fournie par l’organisation ;
+2. saisis l’adresse du serveur si elle n’est pas déjà configurée ;
+3. saisis le code coureur puis appuie sur « Associer » ;
+4. appuie sur « Démarrer le suivi GPS » ;
+5. accorde la localisation précise et l’autorisation en arrière-plan ;
+6. vérifie que l’état affiche « GPS actif » avant de verrouiller l’écran ;
+7. n’arrête pas l’application et désactive l’économie d’énergie.
+
+L’application conserve jusqu’à 2 160 points hors ligne, affiche la précision,
+le dernier envoi et l’écart au GPX, puis synchronise automatiquement. Sur
+Android, une notification permanente indique que le suivi est actif.
+
+### Avec la page web `/track`
 
 Avant le départ :
 
@@ -249,4 +273,3 @@ configuration SMTP, puis demande à la direction de renvoyer l’invitation.
 - contrôle les journaux SMTP ;
 - confirme `APP_URL` et `MAIL_FROM` ;
 - ne laisse pas `MAIL_PREVIEW=true` en production.
-

@@ -215,7 +215,7 @@ export default function DirectorDashboardPage() {
 
       <section className="ds-gps-panel">
         <div className="ds-gps-heading">
-          <div><div className="eyebrow"><span className="live-dot" /> SUIVI GPS</div><h2>Codes coureurs & balises.</h2><p>Génère un code personnel, puis fais ouvrir <b>/track</b> sur le téléphone du coureur.</p><div className="ds-export-actions"><a href={`/api/events/${event.id}/export?type=results`}>RÉSULTATS CSV</a><a href={`/api/events/${event.id}/export?type=laps`}>TOURS CSV</a><a href={`/api/events/${event.id}/export?type=gps`}>GPS CSV</a><a href={`/api/events/${event.id}/export?type=alerts`}>ALERTES CSV</a></div></div>
+          <div><div className="eyebrow"><span className="live-dot" /> SUIVI GPS</div><h2>Codes coureurs & balises.</h2><p>Génère un code personnel, puis utilise l’application <b>Last Loop Tracker</b> ou ouvre <b>/track</b> sans installation.</p><div className="ds-export-actions"><a href={`/api/events/${event.id}/export?type=results`}>RÉSULTATS CSV</a><a href={`/api/events/${event.id}/export?type=laps`}>TOURS CSV</a><a href={`/api/events/${event.id}/export?type=gps`}>GPS CSV</a><a href={`/api/events/${event.id}/export?type=alerts`}>ALERTES CSV</a></div></div>
           <div><strong>{trackingRunners.filter((runner) => runner.last_position_at && runner.last_position_at >= now - 2 * 60 * 1000).length}</strong><span>GPS EN DIRECT</span><Link href="/track" target="_blank" rel="noreferrer">Ouvrir la page coureur ↗</Link></div>
         </div>
 

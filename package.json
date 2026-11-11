@@ -10,7 +10,11 @@
     "build": "vinext build",
     "start": "node dist/standalone/server.js",
     "test": "npm run lint && npm run build",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "mobile:start": "npm --prefix apps/tracker run start",
+    "mobile:ios": "npm --prefix apps/tracker run ios",
+    "mobile:android": "npm --prefix apps/tracker run android",
+    "mobile:check": "npm --prefix apps/tracker run typecheck"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

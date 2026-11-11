@@ -1,0 +1,30 @@
+{
+  "name": "last-loop-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "start:go": "expo start",
+    "android": "LAST_LOOP_ALLOW_HTTP=1 expo run:android",
+    "ios": "LAST_LOOP_ALLOW_HTTP=1 expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "doctor": "expo install --check"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~58.0.23",
+    "expo-build-properties": "~58.0.12",
+    "expo-dev-client": "~58.0.18",
+    "expo-location": "~58.0.20",
+    "expo-secure-store": "~58.0.2",
+    "expo-task-manager": "~58.0.13",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-safe-area-context": "~5.11.1"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.14",
+    "typescript": "~5.9.3"
+  }
+}

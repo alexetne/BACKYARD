@@ -117,8 +117,10 @@ conditionnée par le choix du coureur et l’approbation de la direction.
 | DELETE | `/api/tracking/session` | appareil GPS | révoque l’appareil courant |
 | POST | `/api/tracking/positions` | appareil GPS | envoie jusqu’à 30 points |
 
-Le cookie appareil est `last_loop_tracking_device`, également `HttpOnly` et
-`Secure` en production.
+La page web utilise le cookie `last_loop_tracking_device`, `HttpOnly` et
+`Secure` en production. L’application native utilise le même modèle d’appareil
+avec `Authorization: Bearer <jeton>`. Seule l’empreinte du jeton est enregistrée
+dans SQLite.
 
 Génération :
 
@@ -131,6 +133,17 @@ Association :
 ```json
 {"code":"27-ABCD2345"}
 ```
+
+Association native :
+
+```json
+{"code":"27-ABCD2345","client":"native"}
+```
+
+Cette variante renvoie une seule fois `{ "device": {...}, "token": "..." }`.
+Le jeton doit rester dans le stockage sécurisé du système et être envoyé aux
+routes session, positions et alertes dans l’en-tête Bearer. Régénérer le code
+révoque immédiatement tous les anciens cookies et jetons du coureur.
 
 Lot de positions :
 
@@ -236,4 +249,3 @@ Les routes temps réel, personnelles et de supervision utilisent `no-store`.
 Les opérations d’écriture doivent être appelées depuis la même origine pour
 bénéficier de `SameSite=Strict`. Ne journalise jamais les cookies, mots de
 passe, codes GPS complets ni jetons de réinitialisation.
-
