@@ -1,95 +1,92 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-type Runner = {
-  rank: number;
-  name: string;
-  bib: number;
-  laps: number;
-  distance: string;
-  lastLap: string;
-  status: "course" | "arrive" | "abandon";
-  country: string;
-};
-
-const runners: Runner[] = [
-  { rank: 1, name: "Amélie Roux", bib: 27, laps: 18, distance: "120,7", lastLap: "52:18", status: "arrive", country: "FR" },
-  { rank: 2, name: "Jonas Berg", bib: 14, laps: 18, distance: "120,7", lastLap: "53:42", status: "arrive", country: "SE" },
-  { rank: 3, name: "Léon Marchal", bib: 42, laps: 18, distance: "120,7", lastLap: "—", status: "course", country: "FR" },
-  { rank: 4, name: "Sofia Benali", bib: 8, laps: 18, distance: "120,7", lastLap: "—", status: "course", country: "BE" },
-  { rank: 5, name: "Milo Andersen", bib: 31, laps: 18, distance: "120,7", lastLap: "—", status: "course", country: "DK" },
-  { rank: 6, name: "Nina Keller", bib: 19, laps: 17, distance: "114,0", lastLap: "59:21", status: "abandon", country: "CH" },
-];
-
-const updates = [
-  { time: "17:07", title: "Jonas Berg boucle le tour", detail: "Tour 18 · 53:42", tone: "lime" },
-  { time: "17:06", title: "Amélie Roux est de retour", detail: "Tour 18 · 52:18", tone: "lime" },
-  { time: "17:02", title: "Nina Keller abandonne", detail: "Après 17 tours · 114,0 km", tone: "orange" },
-  { time: "16:15", title: "Départ du tour 18", detail: "23 participants au départ", tone: "dark" },
-];
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { GpxRouteCanvas } from "./components/GpxRouteCanvas";
+import type { DashboardEvent } from "../lib/types";
 
 const filters = ["Tous", "En course", "Arrivés"];
 
-function formatCountdown(total: number) {
-  const minutes = Math.floor(total / 60).toString().padStart(2, "0");
-  const seconds = (total % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
-
 export default function Home() {
-  const [secondsLeft, setSecondsLeft] = useState(31 * 60 + 42);
+  const [event, setEvent] = useState<DashboardEvent | null>(null);
+  const [error, setError] = useState("");
   const [filter, setFilter] = useState("Tous");
-  const [followed, setFollowed] = useState<number[]>([27]);
+  const [followed, setFollowed] = useState<number[]>([]);
+  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setSecondsLeft((value) => (value > 0 ? value - 1 : 60 * 60));
-    }, 1000);
-    return () => window.clearInterval(interval);
+  const loadEvent = useCallback(async () => {
+    try {
+      const response = await fetch("/api/events/active", { cache: "no-store" });
+      const payload = await response.json() as { event?: DashboardEvent; error?: string };
+      if (!response.ok || !payload.event) throw new Error(payload.error || "Aucun événement actif.");
+      setEvent(payload.event);
+      setError("");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Données indisponibles.");
+    }
   }, []);
 
-  const visibleRunners = useMemo(() => {
-    if (filter === "En course") return runners.filter((runner) => runner.status === "course");
-    if (filter === "Arrivés") return runners.filter((runner) => runner.status === "arrive");
-    return runners;
-  }, [filter]);
+  useEffect(() => {
+    const initialLoad = window.setTimeout(() => void loadEvent(), 0);
+    const dataInterval = window.setInterval(() => void loadEvent(), 10_000);
+    const clockInterval = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.clearInterval(dataInterval);
+      window.clearInterval(clockInterval);
+    };
+  }, [loadEvent]);
 
-  function toggleFollow(bib: number) {
-    setFollowed((current) => current.includes(bib) ? current.filter((item) => item !== bib) : [...current, bib]);
+  const visibleRunners = useMemo(() => {
+    if (!event) return [];
+    if (filter === "En course") return event.runners.filter((runner) => runner.state === "course");
+    if (filter === "Arrivés") return event.runners.filter((runner) => runner.state === "arrive");
+    return event.runners;
+  }, [event, filter]);
+
+  if (!event) {
+    return (
+      <main className="loading-page">
+        <div className="brand"><span className="brand-mark">⌁</span><span>LAST LOOP</span></div>
+        <div><span className="live-dot" /><b>{error || "Chargement de la course…"}</b></div>
+        {error && <a href="/admin">Créer ou activer un événement →</a>}
+      </main>
+    );
+  }
+
+  const secondsLeft = Math.max(0, Math.ceil((event.stats.nextDepartureAt - now) / 1000));
+  const elapsedSeconds = Math.max(0, Math.floor((now - event.startAt) / 1000));
+  const nextLap = event.stats.nextDepartureAt === event.startAt ? 1 : event.stats.currentLap + 1;
+  const dateLabel = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short" }).format(event.startAt).toUpperCase();
+
+  function toggleFollow(id: number) {
+    setFollowed((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
   return (
     <main>
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Last Loop, accueil">
-          <span className="brand-mark" aria-hidden="true">⌁</span>
-          <span>LAST LOOP</span>
+          <span className="brand-mark" aria-hidden="true">⌁</span><span>LAST LOOP</span>
         </a>
         <div className="event-switcher" aria-label="Événement en cours">
-          <span className="event-date">04–05 OCT.</span>
-          <span className="event-name">Backyard de la Forêt</span>
-          <span className="chevron" aria-hidden="true">⌄</span>
+          <span className="event-date">{dateLabel}</span><span className="event-name">{event.name}</span><span className="chevron">⌄</span>
         </div>
         <nav className="nav-actions" aria-label="Navigation principale">
-          <a href="#classement">Classement</a>
-          <a href="#parcours">Parcours</a>
-          <button className="share-button" type="button" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
-            Partager <span aria-hidden="true">↗</span>
-          </button>
+          <a href="#classement">Classement</a><a href="#parcours">Parcours</a><a href="/track">Partager GPS</a><a href="/display">Écran camp</a><a href="/admin">Pilotage</a>
+          <button className="share-button" type="button" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Partager <span>↗</span></button>
         </nav>
       </header>
 
       <div className="page-shell" id="top">
         <section className="event-heading">
           <div>
-            <div className="eyebrow"><span className="live-dot" /> LIVE · ÉDITION 2026</div>
-            <h1>Backyard de<br />la Forêt</h1>
+            <div className="eyebrow"><span className="live-dot" /> LIVE · {event.status.toUpperCase()}</div>
+            <h1>{event.name}</h1>
           </div>
           <div className="event-meta">
-            <p>Forêt de Fontainebleau, FR</p>
-            <p>Départ samedi à 00:00</p>
-            <div className="weather"><span aria-hidden="true">☼</span> 12° <span className="muted">· Sec · Vent faible</span></div>
+            <p>{event.location}</p>
+            <p>Départ {formatDateTime(event.startAt)}</p>
+            <div className="weather">⌁ {formatNumber(event.loopDistanceKm, 3)} km <span className="muted">· {event.gpxName}</span></div>
           </div>
         </section>
 
@@ -97,110 +94,134 @@ export default function Home() {
           <article className="countdown-card">
             <div className="card-kicker">PROCHAIN DÉPART</div>
             <div className="countdown">{formatCountdown(secondsLeft)}</div>
-            <div className="countdown-footer">
-              <span>Tour 19</span>
-              <span>Départ à 18:00</span>
-            </div>
-            <div className="progress-track" aria-hidden="true"><span style={{ width: `${(secondsLeft / 3600) * 100}%` }} /></div>
+            <div className="countdown-footer"><span>Tour {nextLap}</span><span>{formatTime(event.stats.nextDepartureAt)}</span></div>
+            <div className="progress-track" aria-hidden="true"><span style={{ width: `${Math.min(100, (secondsLeft / 3600) * 100)}%` }} /></div>
           </article>
 
           <article className="stat-card lime-card">
-            <div className="card-kicker">TOUR EN COURS</div>
-            <strong>18</strong>
-            <div className="stat-bottom"><span>120,7 km</span><span>↗</span></div>
+            <div className="card-kicker">BOUCLES EFFECTUÉES</div>
+            <strong>{event.stats.completedLaps}<small> / {event.totalLoops ?? "∞"}</small></strong>
+            <div className="stat-bottom"><span>Boucle actuelle : {event.stats.currentLap}</span><span>↗</span></div>
           </article>
 
           <article className="stat-card dark-card">
             <div className="card-kicker">ENCORE EN LICE</div>
-            <strong>23</strong>
-            <div className="stat-bottom"><span>sur 64 au départ</span><span className="trend">−4</span></div>
+            <strong>{event.stats.activeRunners}</strong>
+            <div className="stat-bottom"><span>sur {event.stats.totalRunners} au départ</span><span className="trend">LIVE</span></div>
+          </article>
+
+          <article className="stat-card distance-card">
+            <div className="card-kicker">DISTANCE PARCOURUE</div>
+            <strong>{formatNumber(event.stats.distanceKm, 1)}<small> km</small></strong>
+            <div className="stat-bottom"><span>Temps de course</span><span className="elapsed-time">{formatElapsed(elapsedSeconds)}</span></div>
           </article>
         </section>
 
         <section className="content-grid">
           <article className="leaderboard" id="classement">
             <div className="section-title-row">
-              <div>
-                <div className="eyebrow">CLASSEMENT EN DIRECT</div>
-                <h2>Les derniers debout.</h2>
-              </div>
+              <div><div className="eyebrow">CLASSEMENT EN DIRECT</div><h2>Les derniers debout.</h2></div>
               <div className="filters" role="group" aria-label="Filtrer le classement">
-                {filters.map((item) => (
-                  <button key={item} className={filter === item ? "active" : ""} type="button" onClick={() => setFilter(item)}>{item}</button>
-                ))}
+                {filters.map((item) => <button key={item} className={filter === item ? "active" : ""} type="button" onClick={() => setFilter(item)}>{item}</button>)}
               </div>
             </div>
 
             <div className="runner-table" role="table" aria-label="Classement des participants">
-              <div className="runner-row table-head" role="row">
-                <span>POS.</span><span>ATHLÈTE</span><span>TOURS</span><span>DISTANCE</span><span>DERNIER TOUR</span><span>STATUT</span><span />
-              </div>
+              <div className="runner-row table-head" role="row"><span>POS.</span><span>ATHLÈTE</span><span>TOURS</span><span>DISTANCE</span><span>DERNIER TOUR</span><span>STATUT</span><span /></div>
+              {visibleRunners.length === 0 && <div className="table-empty">Aucun coureur dans cette vue.</div>}
               {visibleRunners.map((runner) => (
-                <div className={`runner-row ${runner.status === "abandon" ? "is-out" : ""}`} role="row" key={runner.bib}>
+                <div className={`runner-row ${runner.state === "abandon" ? "is-out" : ""}`} role="row" key={runner.id}>
                   <span className="rank">{runner.rank.toString().padStart(2, "0")}</span>
                   <span className="athlete">
-                    <span className="avatar">{runner.name.split(" ").map((part) => part[0]).join("")}</span>
-                    <span><b>{runner.name}</b><small>#{runner.bib} · {runner.country}</small></span>
+                    <span className="avatar">{runner.avatarEmoji || initials(runner.name)}</span>
+                    <span>
+                      {runner.profileSlug ? <a className="runner-profile-link" href={`/runners/${runner.profileSlug}`}>{runner.name} <i aria-hidden="true">↗</i></a> : <b>{runner.name}</b>}
+                      <small>#{runner.bib} · {runner.country}</small>
+                    </span>
                   </span>
-                  <span data-label="Tours"><b>{runner.laps}</b></span>
-                  <span data-label="Distance">{runner.distance} <small>km</small></span>
-                  <span data-label="Dernier tour" className="mono">{runner.lastLap}</span>
-                  <span data-label="Statut"><span className={`status status-${runner.status}`}><i />{runner.status === "course" ? "EN COURSE" : runner.status === "arrive" ? "ARRIVÉ" : "ABANDON"}</span></span>
-                  <button className={`follow ${followed.includes(runner.bib) ? "is-followed" : ""}`} type="button" onClick={() => toggleFollow(runner.bib)} aria-label={`${followed.includes(runner.bib) ? "Ne plus suivre" : "Suivre"} ${runner.name}`} aria-pressed={followed.includes(runner.bib)}>
-                    {followed.includes(runner.bib) ? "★" : "☆"}
-                  </button>
+                  <span><b>{runner.laps}</b></span>
+                  <span>{formatNumber(runner.distanceKm, 1)} <small>km</small></span>
+                  <span className="mono">{runner.lastLapSeconds === null ? "—" : formatLap(runner.lastLapSeconds)}</span>
+                  <span><span className={`status status-${runner.state}`}><i />{runner.state === "course" ? "EN COURSE" : runner.state === "arrive" ? "ARRIVÉ" : "ABANDON"}</span></span>
+                  <button className={`follow ${followed.includes(runner.id) ? "is-followed" : ""}`} type="button" onClick={() => toggleFollow(runner.id)} aria-label={`${followed.includes(runner.id) ? "Ne plus suivre" : "Suivre"} ${runner.name}`} aria-pressed={followed.includes(runner.id)}>{followed.includes(runner.id) ? "★" : "☆"}</button>
                 </div>
               ))}
             </div>
-            <button className="view-all" type="button">Voir les 64 participants <span>→</span></button>
+            <a className="view-all" href="/admin">Gérer les participants <span>→</span></a>
           </article>
 
           <aside className="live-feed" aria-label="Fil de course en direct">
-            <div className="feed-heading">
-              <div><span className="live-dot" /> FIL DE COURSE</div>
-              <span>AUTO</span>
-            </div>
+            <div className="feed-heading"><div><span className="live-dot" /> FIL DE COURSE</div><span>AUTO</span></div>
             <div className="feed-list">
-              {updates.map((update, index) => (
-                <div className="feed-item" key={`${update.time}-${update.title}`}>
-                  <div className={`feed-marker ${update.tone}`}><span /></div>
-                  <time>{update.time}</time>
-                  <div><b>{update.title}</b><p>{update.detail}</p></div>
+              {event.updates.slice(0, 6).map((update, index) => (
+                <div className="feed-item" key={update.id}>
+                  <div className={`feed-marker ${update.type === "out" ? "orange" : update.type === "lap" ? "lime" : "dark"}`}><span /></div>
+                  <time>{formatTime(update.createdAt)}</time><div><b>{update.title}</b><p>{update.detail}</p></div>
                   {index === 0 && <span className="new-label">NEW</span>}
                 </div>
               ))}
             </div>
-            <button className="feed-button" type="button">Ouvrir le fil complet <span>↗</span></button>
+            <a className="feed-button" href="/admin">Piloter la course <span>↗</span></a>
           </aside>
         </section>
 
         <section className="course-card" id="parcours">
           <div className="course-copy">
-            <div className="eyebrow">LA BOUCLE</div>
-            <h2>6,706 km.<br />Encore. Et encore.</h2>
-            <p>Une boucle forestière rapide, avec une longue montée au troisième kilomètre. Chaque tour doit être terminé en moins d’une heure.</p>
+            <div className="eyebrow">LA BOUCLE · GPX</div>
+            <h2>{formatNumber(event.loopDistanceKm, 3)} km.<br />Encore. Et encore.</h2>
+            <p>Le tracé affiché est celui importé lors de la création de l’événement. Il contient {event.routePoints.length} points simplifiés pour le suivi public.</p>
             <div className="course-stats">
-              <span><b>+92 m</b><small>DÉNIVELÉ</small></span>
-              <span><b>64%</b><small>SENTIER</small></span>
-              <span><b>36%</b><small>ROUTE</small></span>
+              <span><b>+{Math.round(event.elevationGainM)} m</b><small>DÉNIVELÉ GPX</small></span>
+              <span><b>{event.minElevationM === null ? "—" : `${Math.round(event.minElevationM)} m`}</b><small>ALT. MIN.</small></span>
+              <span><b>{event.maxElevationM === null ? "—" : `${Math.round(event.maxElevationM)} m`}</b><small>ALT. MAX.</small></span>
             </div>
           </div>
-          <div className="elevation" aria-label="Profil d'élévation du parcours">
-            <div className="elevation-label top">142 m</div>
-            <div className="profile-bars" aria-hidden="true">
-              {[20, 24, 21, 28, 35, 41, 52, 67, 78, 74, 61, 55, 49, 44, 36, 30, 33, 28, 25, 22, 18].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}
-            </div>
-            <div className="elevation-label bottom">82 m</div>
-            <div className="distance-axis"><span>0</span><span>2 km</span><span>4 km</span><span>6,7 km</span></div>
+          <div className="route-map-wrap">
+            <GpxRouteCanvas points={event.routePoints} label={event.gpxName} runners={event.runners} />
+            <div className="route-map-meta"><span>{event.gpxName}</span><span>{formatNumber(event.routeDistanceKm, 2)} km mesurés</span></div>
           </div>
         </section>
 
         <footer>
-          <div className="brand footer-brand"><span className="brand-mark" aria-hidden="true">⌁</span><span>LAST LOOP</span></div>
+          <div className="brand footer-brand"><span className="brand-mark">⌁</span><span>LAST LOOP</span></div>
           <p>Le suivi live des courses qui ne s’arrêtent jamais.</p>
-          <span>Données de démonstration · Mise à jour 17:28:18</span>
+          <span>Données SQLite · Mise à jour {formatTime(now)}</span>
         </footer>
       </div>
     </main>
   );
+}
+
+function formatCountdown(total: number) {
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60).toString().padStart(2, "0");
+  const seconds = (total % 60).toString().padStart(2, "0");
+  return hours > 0 ? `${hours}:${minutes}:${seconds}` : `${minutes}:${seconds}`;
+}
+
+function formatElapsed(total: number) {
+  const hours = Math.floor(total / 3600).toString().padStart(2, "0");
+  const minutes = Math.floor((total % 3600) / 60).toString().padStart(2, "0");
+  const seconds = (total % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+}
+
+function formatLap(seconds: number) {
+  return `${Math.floor(seconds / 60).toString().padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
+}
+
+function formatNumber(value: number, digits: number) {
+  return value.toLocaleString("fr-FR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+
+function formatTime(value: number) {
+  return new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(value);
+}
+
+function formatDateTime(value: number) {
+  return new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(value);
+}
+
+function initials(name: string) {
+  return name.split(" ").filter(Boolean).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 }
