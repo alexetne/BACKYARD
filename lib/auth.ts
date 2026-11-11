@@ -116,13 +116,13 @@ export function deleteSession(token: string | null) {
   getDb().prepare("DELETE FROM sessions WHERE token_hash = ?").run(hashToken(token));
 }
 
-export function sessionCookie(token: string, expiresAt: number) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+export function sessionCookie(token: string, expiresAt: number, request: Request) {
+  const secure = requestUsesHttps(request) ? "; Secure" : "";
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Expires=${new Date(expiresAt).toUTCString()}${secure}`;
 }
 
-export function expiredSessionCookie() {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+export function expiredSessionCookie(request: Request) {
+  const secure = requestUsesHttps(request) ? "; Secure" : "";
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`;
 }
 
@@ -196,4 +196,10 @@ function readCookie(header: string | null, name: string) {
     if (key === name) return decodeURIComponent(value.join("="));
   }
   return null;
+}
+
+function requestUsesHttps(request: Request) {
+  const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  if (forwardedProtocol) return forwardedProtocol === "https";
+  return new URL(request.url).protocol === "https:";
 }

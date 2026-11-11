@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as Parameters<typeof publicUser>[0];
     return Response.json(
       { user: publicUser(user) },
-      { status: 201, headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) } },
+      { status: 201, headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt, request) } },
     );
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;

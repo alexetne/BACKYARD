@@ -29,6 +29,7 @@ export default function SetupPage() {
     try {
       const response = await fetch("/api/auth/setup", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.get("name"), email: form.get("email"), password }),
       });

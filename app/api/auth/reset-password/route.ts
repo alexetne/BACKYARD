@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const session = createSession(entry.user_id);
     return Response.json(
       { user: publicUser(row) },
-      { headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) } },
+      { headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt, request) } },
     );
   } catch (error) {
     const status = error instanceof AuthError ? error.status : 500;

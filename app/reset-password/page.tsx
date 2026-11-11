@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
     if (password !== form.get("confirmation")) { setError("Les deux mots de passe ne correspondent pas."); setBusy(false); return; }
     try {
       const response = await fetch("/api/auth/reset-password", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }),
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }),
       });
       const payload = await response.json() as { user?: AuthUser; error?: string };
       if (!response.ok || !payload.user) throw new Error(payload.error || "Réinitialisation impossible.");

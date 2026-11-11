@@ -3,7 +3,7 @@ import { deleteSession, expiredSessionCookie, SESSION_COOKIE } from "../../../..
 export async function POST(request: Request) {
   const token = readCookie(request.headers.get("cookie"), SESSION_COOKIE);
   deleteSession(token);
-  return Response.json({ ok: true }, { headers: { "Set-Cookie": expiredSessionCookie() } });
+  return Response.json({ ok: true }, { headers: { "Set-Cookie": expiredSessionCookie(request) } });
 }
 
 function readCookie(header: string | null, name: string) {
