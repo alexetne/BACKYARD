@@ -61,7 +61,7 @@ Création d’événement :
 ```
 
 `totalLoops: null` signifie illimité. Le GPX est limité à 2 Mo et doit contenir
-au moins deux points de trace.
+au moins deux points de trace (`<trkpt>`) ou de route (`<rtept>`).
 
 Types d’export :
 

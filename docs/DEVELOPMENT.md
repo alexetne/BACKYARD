@@ -217,10 +217,11 @@ activation du compte.
 
 ## 11. Cartes et GPX
 
-Le parseur accepte les points `<trkpt>`, impose au moins deux points et une
-taille maximale de 2 Mo. La trace est simplifiée à 800 points pour le rendu
-public, tandis que la distance et le dénivelé sont calculés sur la trace
-complète.
+Le parseur accepte les points de trace `<trkpt>` et les points de route
+`<rtept>` utilisés notamment par les exports Suunto. Il impose au moins deux
+points et une taille maximale de 2 Mo. Le parcours est simplifié à 800 points
+pour le rendu public, tandis que la distance et le dénivelé sont calculés sur
+le parcours complet.
 
 Lors d’un changement du parseur, teste au minimum : namespaces XML, absence
 d’altitude, coordonnées invalides, très grande trace et boucle fermée.

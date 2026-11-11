@@ -55,7 +55,8 @@ export default function DirectorPage() {
 
   async function createEvent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setMessage(""); setPreviewLink("");
-    const form = new FormData(event.currentTarget); const file = form.get("gpx") as File;
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement); const file = form.get("gpx") as File;
     try {
       if (!file?.size) throw new Error("Choisis le fichier GPX du parcours.");
       await api("/api/events", {
@@ -68,7 +69,7 @@ export default function DirectorPage() {
           gpxName: file.name, gpxText: await file.text(),
         }),
       });
-      event.currentTarget.reset(); setInfinite(true); setMessage("Événement créé et activé."); await refresh();
+      formElement.reset(); setInfinite(true); setMessage("Événement créé et activé."); await refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Création impossible."); }
     finally { setBusy(false); }
   }

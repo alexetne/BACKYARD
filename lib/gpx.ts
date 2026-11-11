@@ -12,21 +12,10 @@ export function parseGpx(gpx: string): ParsedGpx {
   if (!gpx.trim()) throw new Error("Le fichier GPX est vide.");
   if (gpx.length > 2_000_000) throw new Error("Le fichier GPX dépasse la limite de 2 Mo.");
 
-  const points: GpxPoint[] = [];
-  const pointPattern = /<(?:[\w-]+:)?trkpt\b([^>]*)>([\s\S]*?)<\/(?:[\w-]+:)?trkpt>/gi;
-  let match: RegExpExecArray | null;
+  const trackPoints = extractPoints(gpx, "trkpt");
+  const points = trackPoints.length >= 2 ? trackPoints : extractPoints(gpx, "rtept");
 
-  while ((match = pointPattern.exec(gpx)) !== null) {
-    const lat = Number(match[1].match(/\blat=["']([^"']+)["']/i)?.[1]);
-    const lon = Number(match[1].match(/\blon=["']([^"']+)["']/i)?.[1]);
-    const elevationValue = match[2].match(/<(?:[\w-]+:)?ele>([^<]+)<\/(?:[\w-]+:)?ele>/i)?.[1];
-    const ele = elevationValue === undefined ? null : Number(elevationValue);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      points.push({ lat, lon, ele: ele !== null && Number.isFinite(ele) ? ele : null });
-    }
-  }
-
-  if (points.length < 2) throw new Error("Le GPX doit contenir au moins deux points de trace.");
+  if (points.length < 2) throw new Error("Le GPX doit contenir au moins deux points de trace ou de route.");
 
   const simplified = simplify(points, 800);
   let distanceKm = 0;
@@ -49,6 +38,26 @@ export function parseGpx(gpx: string): ParsedGpx {
     minElevationM: elevations.length ? Math.min(...elevations) : null,
     maxElevationM: elevations.length ? Math.max(...elevations) : null,
   };
+}
+
+function extractPoints(gpx: string, tag: "trkpt" | "rtept") {
+  const points: GpxPoint[] = [];
+  const pointPattern = new RegExp(
+    `<(?:[\\w-]+:)?${tag}\\b([^>]*)>([\\s\\S]*?)<\\/(?:[\\w-]+:)?${tag}>`,
+    "gi",
+  );
+  let match: RegExpExecArray | null;
+
+  while ((match = pointPattern.exec(gpx)) !== null) {
+    const lat = Number(match[1].match(/\blat=["']([^"']+)["']/i)?.[1]);
+    const lon = Number(match[1].match(/\blon=["']([^"']+)["']/i)?.[1]);
+    const elevationValue = match[2].match(/<(?:[\w-]+:)?ele>([^<]+)<\/(?:[\w-]+:)?ele>/i)?.[1];
+    const ele = elevationValue === undefined ? null : Number(elevationValue);
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      points.push({ lat, lon, ele: ele !== null && Number.isFinite(ele) ? ele : null });
+    }
+  }
+  return points;
 }
 
 function simplify(points: GpxPoint[], limit: number) {
