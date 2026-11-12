@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { AuthUser } from "../../lib/types";
 
 export function SessionMenu() {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -34,8 +36,10 @@ export function SessionMenu() {
   return (
     <div className="session-menu">
       <nav className="session-desktop-links" aria-label="Navigation de l’espace privé">
-        {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
-        <Link href="/display" target="_blank" rel="noreferrer">Écran camp</Link>
+        {links.map((link) => pathname === link.href
+          ? <span className="session-current" aria-current="page" key={link.href}>{link.label}</span>
+          : <Link href={link.href} key={link.href}>{link.label}</Link>)}
+        <Link href="/display">Écran camp</Link>
       </nav>
       <span className={`role-pill role-${user.role} session-identity`}>{roleLabel(user.role)}</span>
       <b className="session-identity">{user.name}</b>
@@ -44,8 +48,10 @@ export function SessionMenu() {
         <summary>Menu</summary>
         <div>
           <strong>{user.name}</strong>
-          {links.map((link) => <Link href={link.href} key={link.href}>{link.label}</Link>)}
-          <Link href="/display" target="_blank" rel="noreferrer">Écran camp ↗</Link>
+          {links.map((link) => pathname === link.href
+            ? <span className="session-current" aria-current="page" key={link.href}>{link.label}</span>
+            : <Link href={link.href} key={link.href}>{link.label}</Link>)}
+          <Link href="/display">Écran camp →</Link>
           <button type="button" onClick={() => void logout()}>Déconnexion</button>
         </div>
       </details>

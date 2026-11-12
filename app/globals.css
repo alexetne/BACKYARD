@@ -209,6 +209,7 @@ h2 { margin: 10px 0 0; font-size: clamp(32px, 4vw, 54px); letter-spacing: -.055e
 .session-desktop-links { display: flex; align-items: center; gap: 14px; }
 .session-menu a { color: #bbbeb6 !important; transition: color .2s ease; }
 .session-menu a:hover { color: white !important; }
+.session-current { color: var(--lime); font-weight: 900; cursor: default; }
 .session-menu b { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
 .session-menu button { border: 1px solid #4c4f48; background: transparent; color: white; padding: 8px 10px; cursor: pointer; font-size: 8px; font-weight: 900; }
 .session-mobile-menu { display: none; }
@@ -664,6 +665,7 @@ footer > span { text-align: right; }
   .session-mobile-menu > div { position: absolute; z-index: 30; top: 41px; right: 0; width: 210px; padding: 10px; display: grid; gap: 2px; background: var(--ink); border: 1px solid #4c4f48; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
   .session-mobile-menu strong { padding: 9px; color: var(--lime); font-size: 9px; }
   .session-menu .session-mobile-menu a { display: block; padding: 10px 9px; color: white !important; border-bottom: 1px solid #30332e; }
+  .session-mobile-menu .session-current { display: block; padding: 10px 9px; border-bottom: 1px solid #30332e; }
   .session-mobile-menu button { margin-top: 6px; padding: 10px; }
   .auth-page { grid-template-columns: 1fr; }
   .auth-brand-panel { min-height: 42vh; padding: 34px 5vw; }
